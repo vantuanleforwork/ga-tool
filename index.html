@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube GA Tool • YouTube Chat Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --void:#0B0713;
+        --panel: rgba(255,255,255,0.045);
+        --panel-strong: rgba(255,255,255,0.07);
+        --border: rgba(255,255,255,0.09);
+        --pink:#FF3D8A;
+        --cyan:#22F2C8;
+        --violet:#8B5CF6;
+        --yellow:#FFC93C;
+        --text-hi:#F6F3FF;
+        --text-mid:#B6ADCE;
+        --text-dim:#7A7295;
+        --danger:#FF5470;
+    }
+    *{ box-sizing:border-box; }
+    body{
+        margin:0;
+        min-height:100vh;
+        font-family:'Plus Jakarta Sans', sans-serif;
+        color:var(--text-hi);
+        background:
+            radial-gradient(circle at 12% -10%, rgba(255,61,138,0.35), transparent 40%),
+            radial-gradient(circle at 100% 10%, rgba(139,92,246,0.35), transparent 45%),
+            radial-gradient(circle at 30% 110%, rgba(34,242,200,0.18), transparent 40%),
+            var(--void);
+        padding: 32px 16px 60px;
+        overflow-x:hidden;
+    }
+    .glow-blob{
+        position:fixed; border-radius:50%; filter:blur(90px); opacity:0.35; z-index:0; pointer-events:none;
+        animation: drift 14s ease-in-out infinite alternate;
+    }
+    .glow-blob.b1{ width:340px; height:340px; background:var(--pink); top:-120px; left:-100px; }
+    .glow-blob.b2{ width:300px; height:300px; background:var(--violet); top:10%; right:-120px; animation-delay:2s; }
+    .glow-blob.b3{ width:260px; height:260px; background:var(--cyan); bottom:-100px; left:20%; animation-delay:4s; }
+    @keyframes drift{ from{ transform: translate(0,0) scale(1);} to{ transform: translate(20px,-25px) scale(1.08);} }
+
+    .wrap{ max-width:600px; margin:0 auto; position:relative; z-index:1; }
+
+    .hero{ text-align:center; margin-bottom:28px; }
+    .hero .kicker{
+        display:inline-flex; align-items:center; gap:6px;
+        font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+        color:var(--cyan); background:rgba(34,242,200,0.1); border:1px solid rgba(34,242,200,0.3);
+        padding:6px 14px; border-radius:999px; margin-bottom:14px;
+    }
+    .hero h1{
+        font-family:'Baloo 2', sans-serif; font-weight:800; font-size:34px; line-height:1.15; margin:0 0 8px;
+        background:linear-gradient(90deg, #fff 0%, var(--cyan) 55%, var(--pink) 100%);
+        -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .hero p{ color:var(--text-mid); font-size:14.5px; margin:0; }
+
+    .card{
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:22px;
+        padding:22px;
+        margin-bottom:18px;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .login-row{ display:flex; align-items:center; gap:12px; }
+    button.btn-login{
+        flex:1; display:flex; align-items:center; justify-content:center; gap:10px;
+        background:linear-gradient(135deg,#4285F4,#5B9CFF);
+        color:#fff; border:none; border-radius:16px; padding:15px 16px;
+        font-family:'Plus Jakarta Sans'; font-weight:700; font-size:15px; cursor:pointer;
+        box-shadow:0 8px 24px rgba(66,133,244,0.35);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    button.btn-login:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(66,133,244,0.45); }
+    .status-login{
+        display:none; align-items:center; gap:8px; justify-content:center;
+        background:rgba(34,242,200,0.12); border:1px solid rgba(34,242,200,0.35);
+        color:var(--cyan); font-weight:700; font-size:13.5px; padding:12px 14px; border-radius:16px; margin-bottom:0;
+    }
+
+    .step{ margin-bottom:20px; }
+    .step:last-child{ margin-bottom:0; }
+    .step-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .step-num{
+        width:26px; height:26px; border-radius:9px; flex-shrink:0;
+        display:flex; align-items:center; justify-content:center;
+        font-family:'Baloo 2'; font-weight:700; font-size:13px;
+        background:linear-gradient(135deg, var(--pink), var(--violet)); color:#fff;
+    }
+    .step-title{ font-weight:700; font-size:14.5px; color:var(--text-hi); }
+    .step-hint{ font-size:12px; color:var(--text-dim); margin:2px 0 0 36px; }
+
+    input[type=text], input[type=number], select{
+        width:100%; padding:13px 14px; border-radius:14px;
+        border:1.5px solid var(--border); background:rgba(255,255,255,0.03);
+        color:var(--text-hi); font-family:'Plus Jakarta Sans'; font-size:14.5px;
+        transition: border-color .15s ease, background .15s ease;
+        appearance:none; -webkit-appearance:none;
+    }
+    input::placeholder{ color:var(--text-dim); }
+    input[type=text]:focus, input[type=number]:focus, select:focus{
+        outline:none; border-color:var(--cyan); background:rgba(34,242,200,0.06);
+    }
+    .select-wrap{ position:relative; }
+    .select-wrap::after{
+        content:"▾"; position:absolute; right:14px; top:50%; transform:translateY(-50%);
+        color:var(--text-dim); pointer-events:none; font-size:13px;
+    }
+    select{ cursor:pointer; padding-right:36px; }
+    select option{ background:#170F26; color:var(--text-hi); }
+
+    button.btn-start{
+        width:100%; border:none; border-radius:16px; padding:16px; margin-top:6px;
+        font-family:'Baloo 2'; font-weight:700; font-size:16.5px; letter-spacing:0.01em; color:#0B0713; cursor:pointer;
+        background:linear-gradient(135deg, var(--cyan), var(--yellow));
+        box-shadow:0 10px 26px rgba(34,242,200,0.28);
+        transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+    button.btn-start:hover{ transform:translateY(-2px); box-shadow:0 14px 30px rgba(34,242,200,0.38); }
+    button.btn-start:disabled{ opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    .timer-display{
+        font-family:'Baloo 2'; font-weight:800; font-size:26px; text-align:center;
+        color:var(--yellow); margin:18px 0 0; background:rgba(255,201,60,0.08);
+        border:1px solid rgba(255,201,60,0.3); padding:14px; border-radius:16px;
+        transition: box-shadow .3s ease;
+    }
+    .timer-display.active{ box-shadow:0 0 0 4px rgba(255,201,60,0.12); animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,201,60,0.25);} 50%{ box-shadow:0 0 0 8px rgba(255,201,60,0);} }
+
+    hr{ border:none; border-top:1px solid var(--border); margin:22px 0; }
+
+    .list-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+    .list-head h3{ margin:0; font-family:'Baloo 2'; font-weight:700; font-size:16px; }
+    .list-head h3 span{ color:var(--cyan); }
+    .actions{ display:flex; gap:8px; }
+    button.btn-action, button.btn-danger{
+        border:none; border-radius:12px; padding:9px 13px; font-weight:700; font-size:12.5px; cursor:pointer;
+        font-family:'Plus Jakarta Sans'; transition: filter .15s ease, transform .15s ease;
+    }
+    button.btn-action{ background:var(--panel-strong); color:var(--text-hi); border:1px solid var(--border); }
+    button.btn-danger{ background:rgba(255,84,112,0.14); color:var(--danger); border:1px solid rgba(255,84,112,0.35); }
+    button.btn-action:hover, button.btn-danger:hover{ filter:brightness(1.15); transform:translateY(-1px); }
+
+    ul{ max-height:230px; overflow-y:auto; background:rgba(0,0,0,0.25); padding:8px; list-style:none; border-radius:16px; border:1px solid var(--border); margin:0; }
+    ul::-webkit-scrollbar{ width:6px; }
+    ul::-webkit-scrollbar-thumb{ background:var(--border); border-radius:6px; }
+    li{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border-radius:10px; }
+    li:hover{ background:rgba(255,255,255,0.03); }
+    li:last-child{ border:none; }
+    .u-name{ font-weight:700; font-size:13.5px; }
+    .u-msg{ font-size:12px; color:var(--text-dim); margin-top:3px; }
+    .time-stamp{ color:var(--text-dim); font-size:11px; white-space:nowrap; }
+    .badge{ background:var(--panel-strong); padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; margin-left:6px; border:1px solid var(--border); }
+    .badge.mod{ background:rgba(91,156,255,0.15); color:#7FB1FF; border-color:rgba(91,156,255,0.4); }
+    .badge.owner{ background:rgba(255,84,112,0.15); color:var(--danger); border-color:rgba(255,84,112,0.4); }
+    .badge.member{ background:rgba(255,201,60,0.15); color:var(--yellow); border-color:rgba(255,201,60,0.4); }
+
+    .mode-tabs{ display:flex; gap:8px; background:rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:16px; padding:5px; margin-bottom:14px; }
+    .mode-tab{
+        flex:1; border:none; border-radius:12px; padding:11px 10px; cursor:pointer;
+        font-family:'Baloo 2'; font-weight:700; font-size:13.5px; color:var(--text-mid);
+        background:transparent; transition: all .18s ease;
+    }
+    .mode-tab.active{ color:#0B0713; }
+    .mode-tab.active[data-tab="classic"]{ background:linear-gradient(135deg, var(--cyan), var(--yellow)); box-shadow:0 6px 16px rgba(34,242,200,0.28); }
+    .mode-tab.active[data-tab="fun"]{ background:linear-gradient(135deg, var(--pink), var(--violet)); box-shadow:0 6px 16px rgba(255,61,138,0.28); color:#fff; }
+    .mode-panel{ display:none; }
+    .mode-panel.active{ display:block; }
+    .fun-note{ font-size:11.5px; color:var(--text-dim); margin-top:8px; line-height:1.5; }
+    #gameStage{ display:none; margin-top:18px; padding:16px; border-radius:20px; background:rgba(0,0,0,0.2); border:1px solid var(--border); }
+
+    button.btn-roll{
+        width:100%; border:none; border-radius:18px; padding:18px; margin-top:20px; cursor:pointer;
+        font-family:'Baloo 2'; font-weight:800; font-size:18px; color:#fff;
+        background:linear-gradient(120deg, var(--pink), var(--violet), var(--pink));
+        background-size:220% 100%;
+        box-shadow:0 12px 30px rgba(255,61,138,0.3);
+        animation: sheen 4s linear infinite;
+        transition: transform .15s ease;
+    }
+    button.btn-roll:hover{ transform:translateY(-2px) scale(1.01); }
+    @keyframes sheen{ 0%{ background-position:0% 0;} 100%{ background-position:220% 0;} }
+
+    .result-box{
+        position:relative; overflow:hidden;
+        margin-top:20px; padding:22px; border-radius:20px; display:none;
+        background:linear-gradient(160deg, rgba(34,242,200,0.14), rgba(139,92,246,0.14));
+        border:1px solid rgba(34,242,200,0.35);
+    }
+    .result-box h3{ margin:0 0 10px; font-family:'Baloo 2'; font-size:17px; color:var(--cyan); }
+    #winnerName{ font-size:19px; font-weight:700; line-height:1.7; position:relative; z-index:1; }
+    .confetti{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+    .confetti span{
+        position:absolute; top:-10px; width:7px; height:12px; border-radius:2px; opacity:0.9;
+        animation: fall 1.8s ease-in forwards;
+    }
+    @keyframes fall{ to{ transform: translateY(220px) rotate(320deg); opacity:0; } }
+
+    ::selection{ background:rgba(255,61,138,0.4); }
+</style>
+</head>
+<body>
+
+<div class="glow-blob b1"></div>
+<div class="glow-blob b2"></div>
+<div class="glow-blob b3"></div>
+
+<div class="wrap">
+
+    <div class="hero">
+        <span class="kicker">✨ Live Chat Picker</span>
+        <h1>YouTube GA Tool</h1>
+        <p>Quét chat YouTube, lọc đúng người, quay số cực nhanh 🎁</p>
+    </div>
+
+    <div class="card">
+        <div class="login-row">
+            <button id="loginBtn" class="btn-login" onclick="loginWithGoogle()">
+                🔑 Đăng nhập bằng Google
+            </button>
+        </div>
+        <div style="text-align:center;font-size:11.5px;color:var(--text-dim);margin-top:8px;">Dùng tài khoản Google/YouTube bất kỳ đều được, không cần đúng kênh chủ livestream.</div>
+        <div id="loginStatus" class="status-login" style="margin-top:10px;">✅ Đã liên kết tài khoản YouTube!</div>
+    </div>
+
+    <div class="card">
+        <div class="step">
+            <div class="step-head">
+                <div class="step-num">1</div>
+                <div class="step-title">Dán link Livestream</div>
+            </div>
+            <div class="step-hint" style="margin-bottom:8px;">Copy nguyên link YouTube (hoặc chỉ Video ID cũng được)</div>
+            <input type="text" id="videoId" placeholder="youtube.com/watch?v=... hoặc youtu.be/...">
+        </div>
+
+        <div class="step">
+            <div class="step-head">
+                <div class="step-num">2</div>
+                <div class="step-title">Điều kiện lọc từ khóa</div>
+            </div>
+            <div class="select-wrap" style="margin-bottom:10px;">
+                <select id="filterMode" onchange="toggleKeywordInput()">
+                    <option value="keyword">Chỉ quét người gõ đúng từ khóa</option>
+                    <option value="all">Quét tất cả mọi người (kể cả Emoji)</option>
+                </select>
+            </div>
+            <input type="text" id="keyword" value="giveaway" placeholder="Nhập từ khóa cần lọc...">
+        </div>
+
+        <div class="step">
+            <div class="step-head">
+                <div class="step-num">3</div>
+                <div class="step-title">Đối tượng tham gia</div>
+            </div>
+            <div class="select-wrap">
+                <select id="roleFilter">
+                    <option value="everyone">Tất cả mọi người (kể cả Mod/Streamer)</option>
+                    <option value="viewers_only">Chỉ Viewer thường</option>
+                    <option value="mods_only">Chỉ Moderator</option>
+                    <option value="members_only">Chỉ Hội viên (Member kênh)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-head">
+                <div class="step-num">4</div>
+                <div class="step-title">Thời gian quét (giây)</div>
+            </div>
+            <input type="number" id="timerInput" value="60" min="5" placeholder="Nhập số giây chạy game...">
+        </div>
+
+        <button class="btn-start" id="startBtn" onclick="startTracking()">⏱️ Bắt đầu quét chat</button>
+        <div class="timer-display" id="timerBox">Thời gian: --s</div>
+    </div>
+
+    <div class="card">
+        <div class="step-head" style="margin-bottom:14px;">
+            <div class="step-num">5</div>
+            <div class="step-title">Cơ chế chọn người thắng</div>
+        </div>
+        <div class="mode-tabs">
+            <button type="button" class="mode-tab" data-tab="classic" onclick="switchModeTab('classic')">🎲 Cổ điển</button>
+            <button type="button" class="mode-tab active" data-tab="fun" onclick="switchModeTab('fun')">🎉 Vui nhộn</button>
+        </div>
+
+        <div class="mode-panel" id="panel-classic">
+            <div class="select-wrap" style="margin-bottom:0;">
+                <select id="winMode">
+                    <option value="random">🎲 Quay số ngẫu nhiên</option>
+                    <option value="fast_1">⚡ 1 người nhanh nhất</option>
+                    <option value="fast_3">⚡ 3 người nhanh nhất</option>
+                    <option value="fast_5">⚡ 5 người nhanh nhất</option>
+                    <option value="fast_10">⚡ 10 người nhanh nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mode-panel active" id="panel-fun">
+            <div class="select-wrap" style="margin-bottom:10px;">
+                <select id="funMode" onchange="updateFunNote()">
+                    <option value="duckrace">🦆 Duck Race</option>
+                    <option value="catrace">🐱 Đua Mèo Leo Cây</option>
+                    <option value="lavafloor">🌋 Sàn Nham Thạch</option>
+                    <option value="threekingdoms">⚔️ Tam Quốc</option>
+                    <option value="dinohunt">🦖 Săn Khủng Long</option>
+                    <option value="passbomb">💣 Truyền Bom Nổ Chậm</option>
+                    <option value="squidgame">🦑 Squid Game</option>
+                </select>
+            </div>
+            <input type="number" id="funDuration" value="15" min="5" max="60" placeholder="Thời gian chơi (giây)">
+            <div class="fun-note" id="funNote"></div>
+        </div>
+
+
+        <div class="list-head">
+            <h3>Danh sách hợp lệ <span id="count">0</span></h3>
+            <div class="actions">
+                <button class="btn-action" onclick="copyAllUsernames()">📋 Copy</button>
+                <button class="btn-danger" onclick="clearAllData()">🗑️ Xóa</button>
+            </div>
+        </div>
+
+        <ul id="userList">
+            <li style="color: #7A7295; justify-content: center;">Chưa có dữ liệu. Bấm bắt đầu để quét chat...</li>
+        </ul>
+
+        <button class="btn-roll" id="rollBtn" onclick="pickWinners()">🎁 Xác định người chiến thắng</button>
+
+        <div id="gameStage"></div>
+
+        <div class="result-box" id="resultBox">
+            <div class="confetti" id="confettiBox"></div>
+            <h3>🎉 Kết quả trúng thưởng</h3>
+            <div id="winnerName"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // =========================================================================
+    // ⚠️ ĐIỀN CLIENT ID CỦA BẠN VÀO ĐÂY ĐỂ ĐĂNG NHẬP CHẠY ĐƯỢC
+    const CLIENT_ID = '649147136346-lieir8vtbub048bogtn5nl7uablivg0u.apps.googleusercontent.com';
+    // =========================================================================
+
+    let accessToken = null;
+    let validUsers = [];
+    let checkedChannelIds = new Set();
+    let pollTimeoutId = null;
+    let countdownId = null;
+    let nextPageToken = "";
+    let isTrackingActive = false;
+    let trackingStartTime = null;
+
+    // Tự động kiểm tra xem URL có chứa Access Token sau khi Đăng nhập thành công trả về không
+    window.onload = function() {
+        updateFunNote();
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+        if (token) {
+            accessToken = token;
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('loginStatus').style.display = 'flex';
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
+    function loginWithGoogle() {
+        if(CLIENT_ID.includes('THAY_THE_BANG_CLIENT_ID')) {
+            return alert("Vui lòng cấu hình Client ID chính xác trong code trước khi đăng nhập!");
+        }
+        const redirectUri = window.location.href.split('#')[0].replace(/\/$/, "");
+        const scope = 'https://www.googleapis.com/auth/youtube.readonly';
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
+        window.location.href = authUrl;
+    }
+
+    let currentModeTab = 'fun';
+    const loadedScripts = new Set();
+
+    const FUN_NOTES = {
+        duckrace: 'Mỗi người trong danh sách hợp lệ sẽ là 1 chú vịt bơi chung 1 hồ (đè lên nhau là bình thường, không chia làn). Trận đua kéo dài đúng số giây bạn đặt ở trên, không ai về đích trước khi hết giờ — ai dẫn đầu lúc đó sẽ thắng. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        catrace: 'Mỗi người trong danh sách hợp lệ sẽ là 1 chú mèo leo dọc thân cây lên cuộn len ở đỉnh, vừa leo vừa lắc lư và bật nhảy từng nhịp. Trận leo kéo dài đúng số giây bạn đặt ở trên, ai leo cao nhất lúc hết giờ sẽ thắng. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        lavafloor: 'Mỗi người đứng trên 1 ô sàn phía trên biển nham thạch. Từng đợt ô sàn sẽ ngẫu nhiên sập xuống, ai đứng trên đó sẽ rơi khỏi cuộc chơi. Các đợt sập được canh đều trong đúng số giây bạn đặt ở trên, người cuối cùng còn trụ lại sẽ thắng. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        threekingdoms: 'Mini-game chủ đề Tam Quốc. Trận đấu kéo dài đúng số giây bạn đặt ở trên, kết quả chỉ ngã ngũ đúng lúc hết giờ. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        dinohunt: 'Một con khủng long boss tấn công liên tục vào những người chơi đứng trong đấu trường suốt thời gian bạn đặt ở trên, người sống sót cuối cùng tung đòn kết liễu boss và chiến thắng. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        passbomb: 'Tất cả xếp thành hình tròn. Quả bom nổ chậm cháy xèo xèo được chuyền liên tục giữa các người chơi. Bom ngẫu nhiên phát nổ làm loại người đang cầm! Người sống sót cuối cùng trong vòng tròn sẽ thắng. Hỗ trợ tối đa 100 người tham gia mỗi lượt.',
+        squidgame: 'Tất cả người chơi cùng chạy về vạch đích! Khi ĐÈN XANH (Búp bê quay lưng) thì chạy tự do, khi ĐÈN ĐỎ (Búp bê quay lại) thì phải ĐỨNG YÊN. Ai lỡ đà nhúc nhích sẽ bị Laser bắn nổ bị loại! Người vượt qua về đích an toàn đầu tiên sẽ thắng. Hỗ trợ tối đa 100 người tham gia.'
+    };
+
+    function updateFunNote() {
+        const mode = document.getElementById('funMode').value;
+        document.getElementById('funNote').textContent = FUN_NOTES[mode] || '';
+    }
+
+    function switchModeTab(tab) {
+        currentModeTab = tab;
+        document.querySelectorAll('.mode-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+        document.getElementById('panel-classic').classList.toggle('active', tab === 'classic');
+        document.getElementById('panel-fun').classList.toggle('active', tab === 'fun');
+        if (tab === 'fun') updateFunNote();
+    }
+
+    // Tải script của 1 mini-game chỉ khi người dùng thực sự chọn chơi (tránh nặng trang lúc đầu)
+    function loadGameScript(src) {
+        return new Promise((resolve, reject) => {
+            if (loadedScripts.has(src)) return resolve();
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => { loadedScripts.add(src); resolve(); };
+            s.onerror = () => reject(new Error('Không tải được ' + src));
+            document.body.appendChild(s);
+        });
+    }
+
+    function toggleKeywordInput() {
+        const mode = document.getElementById('filterMode').value;
+        document.getElementById('keyword').style.display = (mode === 'all') ? 'none' : 'block';
+    }
+
+    // Cho phép người dùng dán nguyên link Livestream thay vì phải tự tách Video ID.
+    // Hỗ trợ: watch?v=, youtu.be/, /live/, /shorts/, hoặc dán thẳng Video ID (11 ký tự).
+    function extractVideoId(input) {
+        if (!input) return null;
+        input = input.trim();
+
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtube\.com\/live\/|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        ];
+        for (const p of patterns) {
+            const m = input.match(p);
+            if (m) return m[1];
+        }
+        // Nếu người dùng chỉ dán thẳng Video ID thuần (11 ký tự, không dấu /)
+        if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+
+        return null;
+    }
+
+    async function getLiveChatId(videoId) {
+        let url = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}`;
+        try {
+            let res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            if (res.status === 401) {
+                handleTokenExpired();
+                return null;
+            }
+
+            let data = await res.json();
+            if (data.items && data.items.length > 0) {
+                if (!data.items[0].liveStreamingDetails || !data.items[0].liveStreamingDetails.activeLiveChatId) {
+                    alert("Video này hiện không có phiên Live Chat nào đang hoạt động!");
+                    return null;
+                }
+                return data.items[0].liveStreamingDetails.activeLiveChatId;
+            }
+        } catch(e) {}
+        alert("Không lấy được Chat ID. Vui lòng kiểm tra lại link/ID Video hoặc trạng thái Đăng nhập!");
+        return null;
+    }
+
+    // Xử lý khi access_token hết hạn (thường sau ~1 giờ) giữa lúc đang quét
+    function handleTokenExpired() {
+        if (pollTimeoutId) clearTimeout(pollTimeoutId);
+        if (countdownId) clearInterval(countdownId);
+        isTrackingActive = false;
+        accessToken = null;
+        document.getElementById('loginBtn').style.display = 'flex';
+        document.getElementById('loginStatus').style.display = 'none';
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('timerBox').classList.remove('active');
+        document.getElementById('timerBox').textContent = "⚠️ Phiên đăng nhập hết hạn!";
+        alert("Phiên đăng nhập Google đã hết hạn. Vui lòng bấm 'Đăng nhập bằng Google' lại để tiếp tục quét chat!");
+    }
+
+    // Xử lý khi API bị từ chối do hết quota (HTTP 403) — dừng hẳn thay vì lặp lại vô ích
+    function handleQuotaExceeded() {
+        if (pollTimeoutId) clearTimeout(pollTimeoutId);
+        if (countdownId) clearInterval(countdownId);
+        isTrackingActive = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('timerBox').classList.remove('active');
+        document.getElementById('timerBox').textContent = "🚫 API bị giới hạn quota!";
+        alert("YouTube API đã từ chối yêu cầu (HTTP 403). Có thể do:\n• Hết quota API trong ngày (giới hạn 10.000 units/ngày)\n• Client ID bị restrict theo domain\n\nVui lòng thử lại sau hoặc kiểm tra Google Cloud Console.");
+    }
+
+    function clearAllData() {
+        if(pollTimeoutId) clearTimeout(pollTimeoutId);
+        if(countdownId) clearInterval(countdownId);
+        isTrackingActive = false;
+        validUsers = [];
+        checkedChannelIds.clear();
+        nextPageToken = "";
+        trackingStartTime = null;
+        document.getElementById('userList').innerHTML = '<li style="color: #7A7295; justify-content: center;">Đã xóa sạch dữ liệu.</li>';
+        document.getElementById('count').textContent = "0";
+        document.getElementById('resultBox').style.display = "none";
+        document.getElementById('gameStage').style.display = "none";
+        document.getElementById('gameStage').innerHTML = "";
+        document.getElementById('rollBtn').disabled = false;
+        document.getElementById('timerBox').classList.remove('active');
+        document.getElementById('timerBox').textContent = "Thời gian: --s";
+        document.getElementById('startBtn').disabled = false;
+    }
+
+    function copyAllUsernames() {
+        if (validUsers.length === 0) return alert("Danh sách trống, không có gì để copy!");
+        let usernamesText = validUsers.map(user => user.username).join("\n");
+        navigator.clipboard.writeText(usernamesText).then(() => {
+            alert(`Đã copy thành công ${validUsers.length} tên người dùng!`);
+        }).catch(err => alert("Lỗi khi copy: " + err));
+    }
+
+    async function startTracking() {
+        if (!accessToken) return alert("Vui lòng bấm nút Đăng nhập bằng Google ở trên trước!");
+
+        let startBtn = document.getElementById('startBtn');
+        if (startBtn.disabled) return;
+        startBtn.disabled = true;
+
+        let rawInput = document.getElementById('videoId').value;
+        let seconds = parseInt(document.getElementById('timerInput').value);
+
+        if(!rawInput) { startBtn.disabled = false; return alert("Vui lòng dán link Livestream hoặc Video ID!"); }
+
+        let videoId = extractVideoId(rawInput);
+        if(!videoId) {
+            startBtn.disabled = false;
+            return alert("Không nhận diện được Video ID từ link bạn dán. Vui lòng kiểm tra lại link Livestream!");
+        }
+
+        if(isNaN(seconds) || seconds <= 0) { startBtn.disabled = false; return alert("Thời gian đếm ngược không hợp lệ!"); }
+
+        let chatIds = await getLiveChatId(videoId);
+        if(!chatIds) { startBtn.disabled = false; return; }
+
+        if(pollTimeoutId) clearTimeout(pollTimeoutId);
+        if(countdownId) clearInterval(countdownId);
+        validUsers = [];
+        checkedChannelIds.clear();
+        nextPageToken = "";
+        document.getElementById('resultBox').style.display = "none";
+
+        isTrackingActive = true;
+        trackingStartTime = new Date();
+        let timeLeft = seconds;
+        let timerBox = document.getElementById('timerBox');
+        timerBox.classList.add('active');
+        timerBox.textContent = `Đang quét... Còn lại: ${timeLeft}s`;
+
+        countdownId = setInterval(() => {
+            timeLeft--;
+            if(timeLeft <= 0) {
+                clearInterval(countdownId);
+                isTrackingActive = false;
+                timerBox.classList.remove('active');
+                timerBox.textContent = "⏱️ Hết giờ! Đã khóa sổ chat.";
+                startBtn.disabled = false;
+            } else {
+                timerBox.textContent = `Đang quét... Còn lại: ${timeLeft}s`;
+            }
+        }, 1000);
+
+        fetchChatMessages(chatIds);
+    }
+
+    async function fetchChatMessages(liveChatId) {
+        if (!isTrackingActive) return;
+
+        let nextDelayMs = 2000;
+
+        // maxResults=2000 (mức tối đa Google cho phép, thay vì 200 là mức tối thiểu) để 1 lượt quét
+        // lấy được nhiều tin nhắn nhất có thể, tránh dồn ứ khi chat sôi động.
+        let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=authorDetails,snippet&maxResults=2000`;
+        if (nextPageToken) url += `&pageToken=${nextPageToken}`;
+
+        try {
+            let res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            if (res.status === 401) { handleTokenExpired(); return; }
+            if (res.status === 403) { handleQuotaExceeded(); return; }
+            if (res.status === 429) {
+                // Bị giới hạn tốc độ tạm thời — lùi lại một nhịp dài hơn rồi tự thử lại, không dừng hẳn
+                nextDelayMs = 5000;
+                return;
+            }
+
+            let data = await res.json();
+
+            if (data.nextPageToken) nextPageToken = data.nextPageToken;
+
+            // Tôn trọng gợi ý pollingIntervalMillis của YouTube thay vì ép nhanh hơn — quét dồn dập hơn
+            // mức họ đề xuất dễ khiến API bắt đầu throttle/trả thiếu, gây đúng hiện tượng chậm & sót tin.
+            // Chỉ đặt sàn tối thiểu 1s để tránh trường hợp giá trị trả về bất thường gây lặp dồn dập.
+            nextDelayMs = data.pollingIntervalMillis ? Math.max(data.pollingIntervalMillis, 1000) : 2000;
+
+            let filterMode = document.getElementById('filterMode').value;
+            let targetKeyword = document.getElementById('keyword').value.toLowerCase();
+            let roleFilter = document.getElementById('roleFilter').value;
+
+            if (!data.items) return;
+
+            data.items.forEach(item => {
+                // Bỏ qua toàn bộ tin nhắn có sẵn từ trước — chỉ tính tin nhắn gửi SAU thời điểm bấm "Bắt đầu quét"
+                let msgTime = new Date(item.snippet.publishedAt);
+                if (trackingStartTime && msgTime < trackingStartTime) return;
+
+                let channelId = item.authorDetails.channelId;
+                if (checkedChannelIds.has(channelId)) return;
+
+                let message = "";
+                if (item.snippet && item.snippet.displayMessage) {
+                    message = item.snippet.displayMessage;
+                } else if (item.snippet && item.snippet.textMessageDetails && item.snippet.textMessageDetails.messageText) {
+                    message = item.snippet.textMessageDetails.messageText;
+                } else {
+                    message = "[Tin nhắn dạng Emoji/Đặc biệt]";
+                }
+
+                let username = item.authorDetails.displayName;
+                let isMod = item.authorDetails.isChatModerator;
+                let isOwner = item.authorDetails.isChatOwner;
+                let isMember = item.authorDetails.isChatSponsor; // YouTube API vẫn gọi Hội viên/Member là "Sponsor"
+
+                if (roleFilter === 'viewers_only' && (isMod || isOwner)) return;
+                if (roleFilter === 'mods_only' && !isMod && !isOwner) return;
+                if (roleFilter === 'members_only' && !isMember) return;
+                if (filterMode === 'keyword' && !message.toLowerCase().includes(targetKeyword)) return;
+
+                let roleBadge = "";
+                if(isOwner) roleBadge = "<span class='badge owner'>Streamer</span>";
+                else if(isMod) roleBadge = "<span class='badge mod'>Mod</span>";
+                else if(isMember) roleBadge = "<span class='badge member'>Hội viên</span>";
+
+                checkedChannelIds.add(channelId);
+                validUsers.push({
+                    username: username,
+                    message: message,
+                    badge: roleBadge,
+                    time: new Date(item.snippet.publishedAt).toLocaleTimeString('vi-VN')
+                });
+            });
+
+            updateUserListUI();
+        } catch (err) {
+            console.error("Lỗi quét chat:", err);
+            nextDelayMs = 3000;
+        } finally {
+            if (isTrackingActive) {
+                pollTimeoutId = setTimeout(() => fetchChatMessages(liveChatId), nextDelayMs);
+            }
+        }
+    }
+
+    function updateUserListUI() {
+        let listEl = document.getElementById('userList');
+        if(validUsers.length === 0) return;
+
+        listEl.innerHTML = "";
+        validUsers.forEach((user, index) => {
+            let li = document.createElement('li');
+            li.innerHTML = `
+                <div>
+                    <span class="u-name">#${index + 1}. ${user.username}</span>${user.badge}
+                    <div class="u-msg">${user.message}</div>
+                </div>
+                <span class="time-stamp">${user.time}</span>
+            `;
+            listEl.appendChild(li);
+        });
+        document.getElementById('count').textContent = validUsers.length;
+    }
+
+    function spawnConfetti() {
+        const box = document.getElementById('confettiBox');
+        box.innerHTML = "";
+        const colors = ['#FF3D8A', '#22F2C8', '#8B5CF6', '#FFC93C'];
+        for (let i = 0; i < 26; i++) {
+            let s = document.createElement('span');
+            s.style.left = Math.random() * 100 + '%';
+            s.style.background = colors[i % colors.length];
+            s.style.animationDelay = (Math.random() * 0.4) + 's';
+            s.style.animationDuration = (1.3 + Math.random() * 0.8) + 's';
+            box.appendChild(s);
+        }
+        setTimeout(() => { box.innerHTML = ""; }, 2500);
+    }
+
+    function pickWinners() {
+        if(validUsers.length === 0) return alert("Danh sách trống! Chưa có ai thỏa mãn điều kiện.");
+
+        if (currentModeTab === 'fun') {
+            return pickWinnersFun();
+        }
+
+        let winMode = document.getElementById('winMode').value;
+        let resultBox = document.getElementById('resultBox');
+        let winnerNameEl = document.getElementById('winnerName');
+        let gameStage = document.getElementById('gameStage');
+
+        gameStage.style.display = "none";
+        gameStage.innerHTML = "";
+        resultBox.style.display = "block";
+        winnerNameEl.innerHTML = "";
+        spawnConfetti();
+
+        if (winMode === 'random') {
+            let randomIndex = Math.floor(Math.random() * validUsers.length);
+            let winner = validUsers[randomIndex];
+            winnerNameEl.innerHTML = `🎯 Người may mắn: <span style="color:#FFC93C;">${winner.username}</span>`;
+        } else {
+            let countToTake = parseInt(winMode.split('_')[1]);
+            let winners = validUsers.slice(0, countToTake);
+
+            let htmlResult = `⏱️ Top ${winners.length} người nhanh nhất:<br>`;
+            winners.forEach((w, i) => {
+                htmlResult += `TOP ${i+1}: <span style="color:#FFC93C;">${w.username}</span> (${w.time})<br>`;
+            });
+            winnerNameEl.innerHTML = htmlResult;
+        }
+    }
+
+    async function pickWinnersFun() {
+        let funMode = document.getElementById('funMode').value;
+        let resultBox = document.getElementById('resultBox');
+        let winnerNameEl = document.getElementById('winnerName');
+        let gameStage = document.getElementById('gameStage');
+        let rollBtn = document.getElementById('rollBtn');
+
+        resultBox.style.display = "none";
+        winnerNameEl.innerHTML = "";
+        gameStage.style.display = "block";
+        gameStage.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:20px;">⏳ Đang tải game...</div>';
+        rollBtn.disabled = true;
+
+        try {
+            let duration = parseInt(document.getElementById('funDuration').value);
+            if (isNaN(duration) || duration < 5) duration = 15;
+
+            if (funMode === 'duckrace') {
+                await loadGameScript('games/duckrace.js?v=6');
+                window.runDuckRace(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `🦆 Vịt về nhất: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'catrace') {
+                await loadGameScript('games/catrace.js?v=2');
+                window.runCatRace(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `🐱 Mèo leo cao nhất: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'lavafloor') {
+                await loadGameScript('games/lavafloor.js?v=2');
+                window.runLavaFloor(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `🌋 Người trụ lại cuối cùng: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'threekingdoms') {
+                await loadGameScript('games/threekingdoms.js?v=1');
+                window.runThreeKingdoms(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `⚔️ Người chiến thắng Tam Quốc: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'dinohunt') {
+                await loadGameScript('games/dinohunt.js?v=1');
+                window.runDinoHunt(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `🦖 Người diệt Boss: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'passbomb') {
+                await loadGameScript('games/passbomb.js?v=3');
+                window.runPassBomb(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `💣 Người may mắn thoát xui sống sót: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else if (funMode === 'squidgame') {
+                await loadGameScript('games/squidgame.js?v=6');
+                window.runSquidGame(validUsers, gameStage, duration, (winner) => {
+                    rollBtn.disabled = false;
+                    resultBox.style.display = "block";
+                    spawnConfetti();
+                    winnerNameEl.innerHTML = `🦑 Người chiến thắng Squid Game: <span style="color:#FFC93C;">${winner.username}</span>`;
+                });
+            } else {
+                gameStage.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:20px;">🚧 Mini-game này sắp ra mắt, quay lại sau nhé!</div>';
+                rollBtn.disabled = false;
+            }
+        } catch (err) {
+            gameStage.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:13px;padding:20px;">Lỗi tải game: ${err.message}</div>`;
+            rollBtn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
